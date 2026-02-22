@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useTransition, DragEvent } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     User,
@@ -31,7 +31,7 @@ type FormStep = 'identity' | 'narrative' | 'visuals' | 'review';
 type SubmissionState = 'idle' | 'uploading' | 'ai' | 'saving' | 'done' | 'error';
 
 export default function IntakeForm() {
-    const [isPending, startTransition] = useTransition();
+    const [, startTransition] = useTransition();
     const [formStep, setFormStep] = useState<FormStep>('identity');
     const [subState, setSubState] = useState<SubmissionState>('idle');
     const [subdomain, setSubdomain] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export default function IntakeForm() {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="max-w-md w-full text-center"
+                className="max-w-md w-full text-center mx-auto"
             >
                 <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-10 relative">
                     <div className="absolute inset-0 rounded-full blur-2xl bg-white/5 animate-pulse" />
@@ -129,284 +129,265 @@ export default function IntakeForm() {
         );
     }
 
+    const isLoading = subState !== 'idle' && subState !== 'error';
+
     return (
-        <div className="w-full">
-            {/* Progress Bar */}
-            <div className="mb-12 flex items-center gap-4">
-                {steps.map((s, i) => (
-                    <div key={s} className="flex-1 flex flex-col gap-2">
-                        <div className={`h-1 rounded-full transition-all duration-500 ${i <= currentStepIndex ? 'bg-white' : 'bg-white/5'}`} />
-                        <span className={`text-[8px] uppercase tracking-widest font-bold transition-opacity duration-500 ${i === currentStepIndex ? 'opacity-100' : 'opacity-20'}`}>
-                            {s}
+        <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 items-start px-4">
+            {/* ── FORM SIDE ── */}
+            <div className="space-y-12">
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40">
+                            Step {currentStepIndex + 1} / {steps.length}
                         </span>
+                        <div className="flex gap-1">
+                            {steps.map((s, i) => (
+                                <div
+                                    key={s}
+                                    className={`h-1 w-8 rounded-full transition-all duration-500 ${i <= currentStepIndex ? 'bg-white' : 'bg-white/10'
+                                        }`}
+                                />
+                            ))}
+                        </div>
                     </div>
-                ))}
-            </div>
+                    <h1 className="font-display text-4xl lg:text-5xl font-medium tracking-tight">
+                        {formStep === 'identity' && 'Tell us your name.'}
+                        {formStep === 'narrative' && 'The creative story.'}
+                        {formStep === 'visuals' && 'Curation & identity.'}
+                        {formStep === 'review' && 'One final check.'}
+                    </h1>
+                </div>
 
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={formStep}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                    className="space-y-10"
-                >
-                    {formStep === 'identity' && (
-                        <div className="space-y-8">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="group space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
-                                        <User className="w-3 h-3" /> Full Name
-                                    </label>
-                                    <input
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        placeholder="Aria Chen"
-                                        className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none"
-                                    />
-                                </div>
-                                <div className="group space-y-3">
-                                    <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
-                                        <Globe className="w-3 h-3" /> Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        placeholder="aria@studio.com"
-                                        className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none"
-                                    />
-                                </div>
-                            </div>
-                            <div className="group space-y-3">
-                                <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
-                                    <Briefcase className="w-3 h-3" /> Creative Discipline
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={profession}
-                                        onChange={(e) => setProfession(e.target.value)}
-                                        className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white appearance-none cursor-pointer outline-none"
-                                    >
-                                        <option value="" disabled className="bg-black">Select your craft</option>
-                                        {PROFESSIONS.map((p) => (
-                                            <option key={p} value={p} className="bg-black">{p}</option>
-                                        ))}
-                                    </select>
-                                    <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600 rotate-90 pointer-events-none" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                <div className="min-h-[440px]">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={formStep}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                            {formStep === 'identity' && (
+                                <div className="space-y-8">
+                                    <div className="group space-y-3">
+                                        <label className="text-[10px] uppercase tracking-widest font-bold opacity-40 group-focus-within:opacity-100 transition-opacity">Full Name</label>
+                                        <div className="relative">
+                                            <User className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                                            <input
+                                                type="text"
+                                                value={fullName}
+                                                onChange={(e) => setFullName(e.target.value)}
+                                                placeholder="e.g. Alexander McQueen"
+                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20"
+                                            />
+                                        </div>
+                                    </div>
 
-                    {formStep === 'narrative' && (
-                        <div className="space-y-8">
-                            <div className="group space-y-3">
-                                <label className="flex items-center justify-between text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
-                                    <span className="flex items-center gap-2 text-white"><PenTool className="w-3 h-3" /> The Raw Bio</span>
-                                    <span className="opacity-40 italic lowercase tracking-normal font-normal">Input for AI Polish</span>
-                                </label>
-                                <textarea
-                                    value={rawBio}
-                                    onChange={(e) => setRawBio(e.target.value)}
-                                    rows={4}
-                                    placeholder="Describe your craft, mission, and unique perspective..."
-                                    className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none resize-none"
-                                />
-                            </div>
-                            <div className="group space-y-3">
-                                <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
-                                    <Sparkles className="w-3 h-3 text-white" /> Creative Philosophy
-                                </label>
-                                <textarea
-                                    value={philosophy}
-                                    onChange={(e) => setPhilosophy(e.target.value)}
-                                    rows={3}
-                                    placeholder="What values drive your creative decisions?"
-                                    className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none resize-none"
-                                />
-                            </div>
-                        </div>
-                    )}
+                                    <div className="group space-y-3">
+                                        <label className="text-[10px] uppercase tracking-widest font-bold opacity-40 group-focus-within:opacity-100 transition-opacity">Email Address</label>
+                                        <div className="relative">
+                                            <Globe className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="hello@studio.com"
+                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20"
+                                            />
+                                        </div>
+                                    </div>
 
-                    {formStep === 'visuals' && (
-                        <div className="space-y-8">
-                            {/* Profile Photo */}
-                            <div className="space-y-3">
-                                <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
-                                    <User className="w-3 h-3" /> Portrait Identity
-                                </label>
-                                <div
-                                    className={`relative border border-dashed rounded-2xl p-8 transition-all duration-500 cursor-pointer flex flex-col items-center justify-center gap-4 ${profileDragging ? 'border-white/40 bg-white/5' : 'border-white/10 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.02]'}`}
-                                    onDragOver={(e) => { e.preventDefault(); setProfileDragging(true); }}
-                                    onDragLeave={() => setProfileDragging(false)}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        setProfileDragging(false);
-                                        const file = e.dataTransfer.files?.[0];
-                                        if (file) setProfilePhoto(file);
-                                    }}
-                                    onClick={() => profileRef.current?.click()}
-                                >
-                                    {profilePhoto ? (
-                                        <div className="flex items-center gap-6 w-full">
-                                            <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
-                                                <img src={URL.createObjectURL(profilePhoto)} alt="Preview" className="w-full h-full object-cover grayscale" />
-                                            </div>
-                                            <div className="flex-1 overflow-hidden">
-                                                <p className="text-xs text-white font-medium truncate">{profilePhoto.name}</p>
-                                                <p className="text-[9px] text-neutral-600 uppercase tracking-widest mt-1">Ready for curation</p>
-                                            </div>
-                                            <button
-                                                onClick={(e) => { e.stopPropagation(); setProfilePhoto(null); }}
-                                                className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                    <div className="group space-y-3">
+                                        <label className="text-[10px] uppercase tracking-widest font-bold opacity-40 group-focus-within:opacity-100 transition-opacity">Profession</label>
+                                        <div className="relative">
+                                            <Briefcase className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                                            <select
+                                                value={profession}
+                                                onChange={(e) => setProfession(e.target.value)}
+                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light appearance-none cursor-pointer"
                                             >
-                                                <Trash2 className="w-4 h-4 text-neutral-600" />
-                                            </button>
+                                                <option value="" disabled className="bg-black">Select your craft</option>
+                                                {PROFESSIONS.map(p => (
+                                                    <option key={p} value={p} className="bg-black">{p}</option>
+                                                ))}
+                                            </select>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                                                <Upload className="w-5 h-5 text-neutral-600" />
-                                            </div>
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-neutral-600">Drop Portrait <span className="text-white">or click</span></p>
-                                        </>
-                                    )}
-                                    <input ref={profileRef} type="file" className="hidden" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)} />
-                                </div>
-                            </div>
-
-                            {/* Project Photos */}
-                            <div className="space-y-3">
-                                <label className="flex items-center justify-between text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
-                                    <span className="flex items-center gap-2"><ImageIcon className="w-3 h-3" /> Selected Works</span>
-                                    <span className="opacity-40">{projectPhotos.length}/5</span>
-                                </label>
-                                <div
-                                    className={`relative border border-dashed rounded-2xl p-8 transition-all duration-500 cursor-pointer ${projectDragging ? 'border-white/40 bg-white/5' : 'border-white/10 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.02]'} ${projectPhotos.length >= 5 ? 'opacity-40 cursor-not-allowed' : ''}`}
-                                    onDragOver={(e) => { e.preventDefault(); setProjectDragging(true); }}
-                                    onDragLeave={() => setProjectDragging(false)}
-                                    onDrop={(e) => {
-                                        e.preventDefault();
-                                        setProjectDragging(false);
-                                        const files = Array.from(e.dataTransfer.files).slice(0, 5 - projectPhotos.length);
-                                        setProjectPhotos(prev => [...prev, ...files]);
-                                    }}
-                                    onClick={() => projectPhotos.length < 5 && projectRef.current?.click()}
-                                >
-                                    {projectPhotos.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {projectPhotos.map((file, i) => (
-                                                <div key={i} className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
-                                                    <div className="w-8 h-8 rounded-lg bg-white/10 overflow-hidden">
-                                                        <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover grayscale" />
-                                                    </div>
-                                                    <span className="text-[10px] text-neutral-400 flex-1 truncate">{file.name}</span>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setProjectPhotos(prev => prev.filter((_, idx) => idx !== i)); }}
-                                                        className="p-1 rounded-full hover:bg-white/10"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5 text-neutral-700" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            {projectPhotos.length < 5 && (
-                                                <p className="text-[9px] text-center text-neutral-600 mt-2 uppercase tracking-widest">Add more works</p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center gap-4">
-                                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
-                                                <Upload className="w-5 h-5 text-neutral-600" />
-                                            </div>
-                                            <p className="text-[10px] uppercase tracking-widest font-bold text-neutral-600">Curate Gallery Images</p>
-                                        </div>
-                                    )}
-                                    <input ref={projectRef} type="file" className="hidden" multiple accept="image/*" onChange={(e) => {
-                                        const files = Array.from(e.target.files || []).slice(0, 5 - projectPhotos.length);
-                                        setProjectPhotos(prev => [...prev, ...files]);
-                                    }} />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {formStep === 'review' && (
-                        <div className="space-y-10">
-                            <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-10 space-y-8">
-                                <div className="space-y-2">
-                                    <h3 className="font-display text-3xl text-white font-medium italic">{fullName || 'Principal Name'}</h3>
-                                    <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-600 font-bold">{profession || ' Discipline'}</p>
-                                </div>
-                                <div className="h-px bg-white/5" />
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <p className="text-[8px] uppercase tracking-widest font-bold text-neutral-700 font-bold">Contact Channel</p>
-                                        <p className="text-xs text-neutral-400 font-light">{email || 'No email provided'}</p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <p className="text-[8px] uppercase tracking-widest font-bold text-neutral-700 font-bold">The Narrative</p>
-                                        <p className="text-xs text-neutral-400 font-light leading-relaxed line-clamp-3 italic opacity-60">"{rawBio || 'No bio provided'}"</p>
                                     </div>
                                 </div>
-                            </div>
-
-                            {subState === 'error' && errorMsg && (
-                                <p className="text-[10px] uppercase tracking-widest font-bold text-red-500/80 text-center">{errorMsg}</p>
                             )}
-                        </div>
-                    )}
-                </motion.div>
-            </AnimatePresence>
 
-            {/* Controls */}
-            <div className="mt-16 pt-8 border-t border-white/5 flex items-center justify-between gap-6">
-                {currentStepIndex > 0 ? (
+                            {formStep === 'narrative' && (
+                                <div className="space-y-8">
+                                    <div className="group space-y-3">
+                                        <label className="text-[10px] uppercase tracking-widest font-bold opacity-40 group-focus-within:opacity-100 transition-opacity">Raw Bio</label>
+                                        <div className="relative">
+                                            <PenTool className="absolute left-0 top-4 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                                            <textarea
+                                                value={rawBio}
+                                                onChange={(e) => setRawBio(e.target.value)}
+                                                placeholder="Describe your work and vision..."
+                                                rows={4}
+                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light resize-none placeholder:opacity-20"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="group space-y-3">
+                                        <label className="text-[10px] uppercase tracking-widest font-bold opacity-40 group-focus-within:opacity-100 transition-opacity">Creative Philosophy</label>
+                                        <div className="relative">
+                                            <Sparkles className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                                            <input
+                                                type="text"
+                                                value={philosophy}
+                                                onChange={(e) => setPhilosophy(e.target.value)}
+                                                placeholder="e.g. Less is more."
+                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {formStep === 'visuals' && (
+                                <div className="space-y-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="group space-y-3">
+                                            <label className="text-[10px] uppercase tracking-widest font-bold opacity-40">Portal Identity</label>
+                                            <div
+                                                onClick={() => profileRef.current?.click()}
+                                                onDragOver={(e) => { e.preventDefault(); setProfileDragging(true); }}
+                                                onDragLeave={() => setProfileDragging(false)}
+                                                onDrop={(e) => { e.preventDefault(); setProfileDragging(false); const f = e.dataTransfer.files[0]; if (f) setProfilePhoto(f); }}
+                                                className={`relative aspect-square w-full rounded-sm border border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${profilePhoto || profileDragging ? 'border-white bg-white/5' : 'border-white/10 hover:border-white/30'
+                                                    }`}
+                                            >
+                                                {profilePhoto ? (
+                                                    <img src={URL.createObjectURL(profilePhoto)} className="absolute inset-0 w-full h-full object-cover grayscale opacity-60" alt="Preview" />
+                                                ) : (
+                                                    <Upload className="w-6 h-6 opacity-20" />
+                                                )}
+                                                <input ref={profileRef} type="file" className="hidden" onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)} />
+                                            </div>
+                                        </div>
+
+                                        <div className="group space-y-3">
+                                            <label className="text-[10px] uppercase tracking-widest font-bold opacity-40">Works Curation ({projectPhotos.length}/5)</label>
+                                            <div
+                                                onClick={() => projectRef.current?.click()}
+                                                onDragOver={(e) => { e.preventDefault(); setProjectDragging(true); }}
+                                                onDragLeave={() => setProjectDragging(false)}
+                                                onDrop={(e) => { e.preventDefault(); setProjectDragging(false); const fs = Array.from(e.dataTransfer.files).slice(0, 5 - projectPhotos.length); setProjectPhotos(p => [...p, ...fs]); }}
+                                                className={`relative aspect-square w-full rounded-sm border border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${projectDragging ? 'border-white bg-white/5' : 'border-white/10 hover:border-white/30'
+                                                    }`}
+                                            >
+                                                <div className="flex -space-x-2">
+                                                    {projectPhotos.map((f, i) => (
+                                                        <div key={i} className="w-8 h-8 rounded-full border border-black bg-neutral-800 overflow-hidden">
+                                                            <img src={URL.createObjectURL(f)} className="w-full h-full object-cover" alt="p" />
+                                                        </div>
+                                                    ))}
+                                                    {projectPhotos.length === 0 && <ImageIcon className="w-6 h-6 opacity-20" />}
+                                                </div>
+                                                <input ref={projectRef} type="file" multiple className="hidden" onChange={(e) => setProjectPhotos(p => [...p, ...Array.from(e.target.files || [])].slice(0, 5))} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {formStep === 'review' && (
+                                <div className="space-y-8">
+                                    <div className="p-8 border border-white/5 bg-white/[0.02] rounded-sm space-y-6">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-40">Ready for Launch</span>
+                                            <Check className="w-4 h-4 text-white" />
+                                        </div>
+                                        <p className="text-xl font-light text-neutral-400 leading-relaxed italic">
+                                            "I am {fullName || '...'}, a {profession || '...'} dedicated to the craft of {rawBio ? 'intentional design' : '...'}."
+                                        </p>
+                                        <p className="text-xs opacity-60 leading-relaxed">
+                                            Your legacy will be crafted with Gemini 2.0 AI and hosted on a unique editorial subdomain.
+                                        </p>
+                                    </div>
+                                    {subState === 'error' && errorMsg && (
+                                        <p className="text-xs text-red-500 font-mono">{errorMsg}</p>
+                                    )}
+                                </div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+                <div className="flex items-center justify-between pt-12 border-t border-white/10">
                     <button
                         onClick={prevStep}
-                        disabled={subState !== 'idle' && subState !== 'error'}
-                        className="flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] font-bold text-neutral-500 hover:text-white transition-colors disabled:opacity-20"
+                        disabled={currentStepIndex === 0 || isLoading}
+                        className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold opacity-40 hover:opacity-100 disabled:opacity-5 transition-opacity"
                     >
-                        <ChevronLeft className="w-4 h-4" /> Go Back
+                        <ChevronLeft className="w-4 h-4" />
+                        Back
                     </button>
-                ) : <div />}
 
-                {formStep === 'review' ? (
-                    <button
-                        onClick={handleSubmit}
-                        disabled={subState !== 'idle' && subState !== 'error' || !fullName || !email || !profession}
-                        className="btn-premium bg-white text-black py-5 px-10 disabled:opacity-20 flex items-center gap-4"
-                    >
-                        {subState === 'idle' || subState === 'error' ? (
-                            <>
-                                <span className="text-xs font-bold uppercase tracking-widest">Publish Legacy</span>
-                                <Sparkles className="w-4 h-4" />
-                            </>
-                        ) : (
-                            <>
-                                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
-                                <span className="text-xs font-bold uppercase tracking-widest">
-                                    {subState === 'uploading' && 'Syncing Assets...'}
-                                    {subState === 'ai' && 'AI Narrative...'}
-                                    {subState === 'saving' && 'Deploying...'}
-                                </span>
-                            </>
-                        )}
-                    </button>
-                ) : (
-                    <button
-                        onClick={nextStep}
-                        className="btn-premium bg-white text-black py-5 px-10 flex items-center gap-4"
-                    >
-                        <span className="text-xs font-bold uppercase tracking-widest">Continue</span>
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                )}
+                    {currentStepIndex < steps.length - 1 ? (
+                        <button
+                            onClick={nextStep}
+                            className="btn-premium bg-white text-black py-4 px-12 group"
+                        >
+                            <span className="text-xs font-bold uppercase tracking-widest">Continue</span>
+                            <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isLoading || !fullName || !email}
+                            className="btn-premium bg-white text-black py-4 px-12 disabled:opacity-40"
+                        >
+                            <span className="text-xs font-bold uppercase tracking-widest">
+                                {subState === 'idle' ? 'Launch Legacy' : 'Publishing...'}
+                            </span>
+                        </button>
+                    )}
+                </div>
             </div>
 
-            <div className="mt-12 flex justify-center">
-                <span className="text-[8px] uppercase tracking-[0.6em] font-bold text-neutral-800">Autonomous Creative Engine v2.0</span>
+            {/* ── PREVIEW SIDE ── */}
+            <div className="hidden lg:sticky lg:top-24 lg:block">
+                <div className="aspect-[3/4] rounded-sm overflow-hidden bg-[#0a0a0a] border border-white/5 relative group p-10 flex flex-col justify-end">
+                    <div className="absolute inset-0 bg-neutral-900 opacity-20" />
+                    {profilePhoto && (
+                        <motion.img
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            src={URL.createObjectURL(profilePhoto)}
+                            className="absolute inset-0 w-full h-full object-cover opacity-20 grayscale brightness-50"
+                        />
+                    )}
+
+                    <div className="relative space-y-6">
+                        <div className="h-[1px] w-8 bg-white/20" />
+                        <div>
+                            <span className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-40">
+                                {profession || 'The Artist'}
+                            </span>
+                            <h2 className="font-display text-4xl leading-[0.9] tracking-tighter mt-4">
+                                {fullName.split(' ')[0] || 'First'} <br />
+                                <span className="italic opacity-30 font-light">{fullName.split(' ').slice(1).join(' ') || 'Name'}</span>
+                            </h2>
+                        </div>
+                        <p className="text-[10px] text-neutral-500 leading-relaxed italic line-clamp-3">
+                            {rawBio ? `"${rawBio.slice(0, 100)}..."` : '"Design is the silent ambassador of your brand."'}
+                        </p>
+                    </div>
+
+                    <div className="absolute top-10 right-10">
+                        <div className="w-2 h-2 rounded-full bg-white opacity-20" />
+                    </div>
+
+                    <div className="absolute inset-0 border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[8px] uppercase tracking-widest font-bold opacity-10">Draft Preview</div>
+                </div>
+
+                <p className="mt-4 text-[9px] uppercase tracking-[0.4em] font-bold text-center opacity-20">Real-time Vision</p>
             </div>
         </div>
     );

@@ -185,9 +185,11 @@ export default function PortfolioPage({ profile }: Props) {
                             <p className="text-xl text-neutral-400 font-light leading-relaxed italic">
                                 "{profile.philosophy || "Design is a translation of internal vision into external experience—a continuous search for honest form."}"
                             </p>
-                            <p className="text-neutral-500 font-light leading-relaxed">
-                                Rooted in the belief that the most powerful solutions are often the most quiet. Every project is an exploration of the space between intention and impact.
-                            </p>
+                            {!profile.philosophy && (
+                                <p className="text-neutral-500 font-light leading-relaxed">
+                                    Rooted in the belief that the most powerful solutions are often the most quiet. Every project is an exploration of the space between intention and impact.
+                                </p>
+                            )}
                         </div>
                         <div className="flex flex-wrap gap-3">
                             {['Strategic', 'Avant-Garde', 'Minimalist'].map((tag) => (

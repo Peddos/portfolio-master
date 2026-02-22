@@ -7,36 +7,48 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 /**
  * Rewrite a raw bio using Gemini 1.5 Flash with a luxury brand strategist prompt.
  */
-export async function rewriteBio(
+export async function generateEditorialContent(
     rawBio: string,
     profession: string
-): Promise<string> {
+): Promise<{ bio: string; philosophy: string }> {
     const model = genAI.getGenerativeModel(
-        { model: 'gemini-2.5-flash' },
+        { model: 'gemini-2.0-flash' },
         { apiVersion: 'v1' }
     );
 
     const prompt = `Act as a luxury brand strategist and elite portfolio copywriter.
 
-Rewrite the following raw bio into a professional, punchy portfolio summary suitable for a ${profession}.
-The copy must:
-- Sound high-end, editorial, and aspirational
-- Be 2-3 sentences maximum
-- Start with impact (no "I am a..." openers)  
-- Use active, confident language
-- Feel like it belongs in Vogue, Wired, or a top creative agency's website
+Given a raw bio for a ${profession}, generate two distinct pieces of editorial content:
+1. "bio": A professional, punchy portfolio summary. 2-3 sentences max. Start with impact. High-end, aspirational tone.
+2. "philosophy": A poetic, deeper creative spirit statement. 1-2 sentences. Focus on the "why" and the craft. Evocative and soulful.
 
-Raw bio: "${rawBio}"
+Raw input: "${rawBio}"
 
-Return ONLY the rewritten bio, nothing else. No quotes, no labels.`;
+Return your response in EXACTLY this JSON format:
+{
+  "bio": "...",
+  "philosophy": "..."
+}
+
+Return ONLY the JSON string. No markdown formatting, no code blocks, no labels.`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
     if (!text) {
-        throw new Error('Gemini returned an empty response. This might be due to safety filters.');
+        throw new Error('Gemini returned an empty response.');
     }
 
-    return text.trim();
+    try {
+        // Clean up text in case Gemini adds markdown blocks
+        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanedText);
+    } catch (err) {
+        console.error('Failed to parse Gemini JSON:', text);
+        return {
+            bio: rawBio.slice(0, 160),
+            philosophy: "Design is a search for honest form and intentional impact."
+        };
+    }
 }

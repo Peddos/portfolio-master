@@ -1,6 +1,6 @@
 'use server';
 
-import { rewriteBio } from '@/lib/gemini';
+import { generateEditorialContent } from '@/lib/gemini';
 import { uploadImage } from '@/lib/cloudinary';
 import { createServiceClient } from '@/lib/supabase';
 import slugify from 'slugify';
@@ -48,10 +48,10 @@ export async function submitPortfolio(
             }
         }
 
-        // Rewrite bio with Gemini AI
-        let polishedBio = '';
+        // Generate editorial content with Gemini AI
+        let aiContent = { bio: '', philosophy: '' };
         try {
-            polishedBio = await rewriteBio(rawBio, profession);
+            aiContent = await generateEditorialContent(rawBio, profession);
         } catch (err: any) {
             console.error('Gemini AI error:', err);
             return { success: false, error: `AI Polish failed: ${err.message || 'unknown error'}` };
@@ -67,8 +67,8 @@ export async function submitPortfolio(
                     full_name: fullName,
                     profession,
                     raw_bio: rawBio,
-                    bio: polishedBio,
-                    philosophy: philosophy || null,
+                    bio: aiContent.bio,
+                    philosophy: philosophy || aiContent.philosophy,
                     profile_img: profileImgUrl || null,
                     projects_json: projectsJson,
                     subdomain,
