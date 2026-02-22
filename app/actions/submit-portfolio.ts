@@ -19,25 +19,46 @@ export async function submitPortfolio(
         const rawBio = formData.get('raw_bio') as string;
         const profilePhotoFile = formData.get('profile_photo') as File | null;
         const projectFiles = formData.getAll('project_photos') as File[];
-
-        const philosophy = formData.get('philosophy') as string;
+        const userPhilosophy = formData.get('philosophy') as string;
 
         if (!fullName || !email || !profession || !rawBio) {
             return { success: false, error: 'All fields are required.' };
         }
 
-        // Generate subdomain slug
+        const supabase = createServiceClient();
+
+        // 1. Check subscription status
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_status')
+            .eq('email', email)
+            .single();
+
+        const isPro = profile?.subscription_status === 'pro';
+
+        // 2. Generate subdomain slug
         const subdomain = slugify(fullName, { lower: true, strict: true });
 
-        // Upload profile photo
+        // 3. Upload profile photo
         let profileImgUrl = '';
         if (profilePhotoFile && profilePhotoFile.size > 0) {
             profileImgUrl = await uploadImage(profilePhotoFile, `portfolio-engine/${subdomain}/profile`);
         }
 
-        // Upload project photos
+        // 4. Generate editorial content with Gemini AI
+        let aiContent = { bio: '', philosophy: '' };
+        try {
+            aiContent = await generateEditorialContent(rawBio, profession);
+        } catch (err: any) {
+            console.error('Gemini AI error:', err);
+            return { success: false, error: `AI Polish failed: ${err.message || 'unknown error'}` };
+        }
+
+        // 5. Upload project photos (Limit based on sub)
         const projectsJson: { title: string; img_url: string }[] = [];
-        for (let i = 0; i < Math.min(projectFiles.length, 5); i++) {
+        const projectLimit = isPro ? 5 : 1;
+
+        for (let i = 0; i < Math.min(projectFiles.length, projectLimit); i++) {
             const file = projectFiles[i];
             if (file && file.size > 0) {
                 const imgUrl = await uploadImage(file, `portfolio-engine/${subdomain}/projects`);
@@ -48,17 +69,7 @@ export async function submitPortfolio(
             }
         }
 
-        // Generate editorial content with Gemini AI
-        let aiContent = { bio: '', philosophy: '' };
-        try {
-            aiContent = await generateEditorialContent(rawBio, profession);
-        } catch (err: any) {
-            console.error('Gemini AI error:', err);
-            return { success: false, error: `AI Polish failed: ${err.message || 'unknown error'}` };
-        }
-
-        // Save to Supabase
-        const supabase = createServiceClient();
+        // 6. Save to Supabase
         const { error: dbError } = await supabase
             .from('profiles')
             .upsert(
@@ -68,7 +79,7 @@ export async function submitPortfolio(
                     profession,
                     raw_bio: rawBio,
                     bio: aiContent.bio,
-                    philosophy: philosophy || aiContent.philosophy,
+                    philosophy: isPro ? (userPhilosophy || aiContent.philosophy) : aiContent.philosophy,
                     profile_img: profileImgUrl || null,
                     projects_json: projectsJson,
                     subdomain,

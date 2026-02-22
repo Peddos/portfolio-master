@@ -12,7 +12,7 @@ export async function generateEditorialContent(
     profession: string
 ): Promise<{ bio: string; philosophy: string }> {
     const model = genAI.getGenerativeModel(
-        { model: 'gemini-2.0-flash' },
+        { model: 'gemini-3-flash' },
         { apiVersion: 'v1' }
     );
 

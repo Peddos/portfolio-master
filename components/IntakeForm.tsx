@@ -16,6 +16,8 @@ import {
     Globe
 } from 'lucide-react';
 import { submitPortfolio } from '@/app/actions/submit-portfolio';
+import { checkSubscriptionStatus } from '@/app/actions/check-subscription';
+import { Sparkles as SparklesIcon, Zap } from 'lucide-react';
 
 const PROFESSIONS = [
     'Fashion Designer',
@@ -36,6 +38,7 @@ export default function IntakeForm() {
     const [subState, setSubState] = useState<SubmissionState>('idle');
     const [subdomain, setSubdomain] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string>('');
+    const [isPro, setIsPro] = useState(false);
 
     // Form Data State
     const [fullName, setFullName] = useState('');
@@ -63,6 +66,14 @@ export default function IntakeForm() {
     const prevStep = () => {
         if (currentStepIndex > 0) {
             setFormStep(steps[currentStepIndex - 1]);
+        }
+    };
+
+    const handleCheckSub = async (val: string) => {
+        setEmail(val);
+        if (val.includes('@') && val.includes('.')) {
+            const { isPro: subStatus } = await checkSubscriptionStatus(val);
+            setIsPro(subStatus);
         }
     };
 
@@ -190,7 +201,7 @@ export default function IntakeForm() {
                                             <input
                                                 type="email"
                                                 value={email}
-                                                onChange={(e) => setEmail(e.target.value)}
+                                                onChange={(e) => handleCheckSub(e.target.value)}
                                                 placeholder="hello@studio.com"
                                                 className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20"
                                             />
@@ -232,18 +243,42 @@ export default function IntakeForm() {
                                         </div>
                                     </div>
 
-                                    <div className="group space-y-3">
-                                        <label className="text-[10px] uppercase tracking-widest font-bold opacity-40 group-focus-within:opacity-100 transition-opacity">Creative Philosophy</label>
+                                    <div className={`group space-y-3 relative transition-all duration-700 ${!isPro ? 'opacity-30 grayscale' : ''}`}>
+                                        <div className="flex items-center justify-between pb-1">
+                                            <label className="text-[10px] uppercase tracking-widest font-bold opacity-40 group-focus-within:opacity-100 transition-opacity">Creative Philosophy</label>
+                                            {!isPro && (
+                                                <div className="flex items-center gap-2 bg-white/5 px-3 py-1 rounded-full">
+                                                    <Zap className="w-3 h-3 text-amber-400" />
+                                                    <span className="text-[8px] uppercase tracking-widest font-bold text-neutral-400">Pro Feature</span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="relative">
-                                            <Sparkles className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
+                                            <SparklesIcon className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
                                             <input
                                                 type="text"
+                                                disabled={!isPro}
                                                 value={philosophy}
                                                 onChange={(e) => setPhilosophy(e.target.value)}
-                                                placeholder="e.g. Less is more."
-                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20"
+                                                placeholder={isPro ? "e.g. Less is more." : "Unlock 'The Spirit' with Pro"}
+                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20 disabled:cursor-not-allowed"
                                             />
                                         </div>
+                                        {!isPro && (
+                                            <div className="mt-4 p-6 border border-white/5 bg-white/[0.02] rounded-2xl flex items-center justify-between gap-6">
+                                                <div className="space-y-1">
+                                                    <p className="text-[9px] uppercase tracking-widest font-bold text-white">Editorial Suite</p>
+                                                    <p className="text-[8px] text-neutral-500 max-w-[200px]">Unlock deep AI narratives, expanded galleries, and studio-grade storytelling.</p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => window.open('https://your-store.lemonsqueezy.com/checkout/buy/...', '_blank')}
+                                                    className="bg-white text-black text-[9px] font-bold uppercase tracking-widest px-4 py-2 rounded-full hover:scale-105 transition-transform"
+                                                >
+                                                    Upgrade
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}
@@ -271,12 +306,12 @@ export default function IntakeForm() {
                                         </div>
 
                                         <div className="group space-y-3">
-                                            <label className="text-[10px] uppercase tracking-widest font-bold opacity-40">Works Curation ({projectPhotos.length}/5)</label>
+                                            <label className="text-[10px] uppercase tracking-widest font-bold opacity-40">Works Curation ({projectPhotos.length}/{isPro ? 5 : 1})</label>
                                             <div
                                                 onClick={() => projectRef.current?.click()}
                                                 onDragOver={(e) => { e.preventDefault(); setProjectDragging(true); }}
                                                 onDragLeave={() => setProjectDragging(false)}
-                                                onDrop={(e) => { e.preventDefault(); setProjectDragging(false); const fs = Array.from(e.dataTransfer.files).slice(0, 5 - projectPhotos.length); setProjectPhotos(p => [...p, ...fs]); }}
+                                                onDrop={(e) => { e.preventDefault(); setProjectDragging(false); const fs = Array.from(e.dataTransfer.files).slice(0, (isPro ? 5 : 1) - projectPhotos.length); setProjectPhotos(p => [...p, ...fs]); }}
                                                 className={`relative aspect-square w-full rounded-sm border border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${projectDragging ? 'border-white bg-white/5' : 'border-white/10 hover:border-white/30'
                                                     }`}
                                             >
@@ -288,8 +323,11 @@ export default function IntakeForm() {
                                                     ))}
                                                     {projectPhotos.length === 0 && <ImageIcon className="w-6 h-6 opacity-20" />}
                                                 </div>
-                                                <input ref={projectRef} type="file" multiple className="hidden" onChange={(e) => setProjectPhotos(p => [...p, ...Array.from(e.target.files || [])].slice(0, 5))} />
+                                                <input ref={projectRef} type="file" multiple className="hidden" onChange={(e) => setProjectPhotos(p => [...p, ...Array.from(e.target.files || [])].slice(0, isPro ? 5 : 1))} />
                                             </div>
+                                            {!isPro && projectPhotos.length >= 1 && (
+                                                <p className="text-[8px] uppercase tracking-widest font-bold text-amber-400 mt-2">Free Limit Reached — Upgrade for more</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

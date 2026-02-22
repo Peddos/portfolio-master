@@ -27,5 +27,8 @@ export type Profile = {
   profile_img: string | null;
   projects_json: { title: string; img_url: string }[];
   subdomain: string;
+  subscription_status: 'free' | 'pro' | 'past_due' | 'canceled' | null;
+  lemon_squeezy_id: string | null;
+  variant_id: string | null;
   created_at: string;
 };
