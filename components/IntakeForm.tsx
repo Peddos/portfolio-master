@@ -1,6 +1,20 @@
 'use client';
 
 import { useRef, useState, useTransition, DragEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+    User,
+    Briefcase,
+    PenTool,
+    Image as ImageIcon,
+    Upload,
+    Check,
+    ChevronRight,
+    ChevronLeft,
+    Sparkles,
+    Trash2,
+    Globe
+} from 'lucide-react';
 import { submitPortfolio } from '@/app/actions/submit-portfolio';
 
 const PROFESSIONS = [
@@ -13,345 +27,387 @@ const PROFESSIONS = [
     'Other',
 ];
 
-type Step = 'idle' | 'uploading' | 'ai' | 'saving' | 'done' | 'error';
-
-const STEP_LABELS: Record<Step, string> = {
-    idle: 'Generate My Portfolio →',
-    uploading: 'Uploading images...',
-    ai: 'Polishing your story with AI...',
-    saving: 'Publishing your portfolio...',
-    done: 'Portfolio live!',
-    error: 'Something went wrong',
-};
+type FormStep = 'identity' | 'narrative' | 'visuals' | 'review';
+type SubmissionState = 'idle' | 'uploading' | 'ai' | 'saving' | 'done' | 'error';
 
 export default function IntakeForm() {
     const [isPending, startTransition] = useTransition();
-    const [step, setStep] = useState<Step>('idle');
+    const [formStep, setFormStep] = useState<FormStep>('identity');
+    const [subState, setSubState] = useState<SubmissionState>('idle');
     const [subdomain, setSubdomain] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string>('');
 
-    // Profile photo
+    // Form Data State
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [profession, setProfession] = useState('');
+    const [rawBio, setRawBio] = useState('');
+    const [philosophy, setPhilosophy] = useState('');
     const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
-    const [profilePreview, setProfilePreview] = useState<string | null>(null);
-    const [profileDragging, setProfileDragging] = useState(false);
-    const profileRef = useRef<HTMLInputElement>(null);
-
-    // Project photos
     const [projectPhotos, setProjectPhotos] = useState<File[]>([]);
-    const [projectPreviews, setProjectPreviews] = useState<string[]>([]);
+
+    const [profileDragging, setProfileDragging] = useState(false);
     const [projectDragging, setProjectDragging] = useState(false);
+    const profileRef = useRef<HTMLInputElement>(null);
     const projectRef = useRef<HTMLInputElement>(null);
 
-    function handleProfileChange(files: FileList | null) {
-        if (!files || files.length === 0) return;
-        const file = files[0];
-        setProfilePhoto(file);
-    }
+    const steps: FormStep[] = ['identity', 'narrative', 'visuals', 'review'];
+    const currentStepIndex = steps.indexOf(formStep);
 
-    function handleProjectChange(files: FileList | null) {
-        if (!files) return;
-        const newFiles = Array.from(files).slice(0, 5 - projectPhotos.length);
-        const combined = [...projectPhotos, ...newFiles].slice(0, 5);
-        setProjectPhotos(combined);
-    }
+    const nextStep = () => {
+        if (currentStepIndex < steps.length - 1) {
+            setFormStep(steps[currentStepIndex + 1]);
+        }
+    };
 
-    function removeProject(index: number) {
-        const updated = projectPhotos.filter((_, i) => i !== index);
-        setProjectPhotos(updated);
-    }
+    const prevStep = () => {
+        if (currentStepIndex > 0) {
+            setFormStep(steps[currentStepIndex - 1]);
+        }
+    };
 
-    function handleProfileDrop(e: DragEvent) {
-        e.preventDefault();
-        setProfileDragging(false);
-        handleProfileChange(e.dataTransfer.files);
-    }
-
-    function handleProjectDrop(e: DragEvent) {
-        e.preventDefault();
-        setProjectDragging(false);
-        handleProjectChange(e.dataTransfer.files);
-    }
-
-    async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault();
-        const form = e.currentTarget;
-        const formData = new FormData(form);
-
+    async function handleSubmit() {
+        const formData = new FormData();
+        formData.append('full_name', fullName);
+        formData.append('email', email);
+        formData.append('profession', profession);
+        formData.append('raw_bio', rawBio);
+        formData.append('philosophy', philosophy);
         if (profilePhoto) formData.set('profile_photo', profilePhoto);
         projectPhotos.forEach((f) => formData.append('project_photos', f));
 
-        setStep('uploading');
+        setSubState('uploading');
         setErrorMsg('');
 
         startTransition(async () => {
-            // Simulate step progression for UX
-            setTimeout(() => setStep('ai'), 1500);
-            setTimeout(() => setStep('saving'), 4000);
+            setTimeout(() => setSubState('ai'), 1500);
+            setTimeout(() => setSubState('saving'), 4000);
 
             const result = await submitPortfolio(formData);
 
             if (result.success) {
                 setSubdomain(result.subdomain);
-                setStep('done');
+                setSubState('done');
             } else {
-                setStep('error');
+                setSubState('error');
                 setErrorMsg(result.error);
             }
         });
     }
 
-    if (step === 'done' && subdomain) {
+    if (subState === 'done' && subdomain) {
         const portfolioUrl = `/portfolio/${subdomain}`;
         return (
-            <div className="min-h-screen flex items-center justify-center px-6">
-                <div className="max-w-md w-full text-center animate-reveal-up">
-                    {/* Success icon */}
-                    <div className="w-24 h-24 rounded-full bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center mx-auto mb-10 relative">
-                        <div className="absolute inset-0 rounded-full blur-2xl bg-emerald-500/10 animate-pulse" />
-                        <svg className="w-10 h-10 text-emerald-400 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
-                    </div>
-                    <h2 className="font-display text-4xl font-medium text-white mb-4 tracking-tight">
-                        Your legacy is <span className="italic opacity-60">published.</span>
-                    </h2>
-                    <p className="text-neutral-500 mb-12 leading-relaxed font-light">
-                        Our AI has woven your experience into a premium editorial narrative. Your professional story is now live.
-                    </p>
-                    <a
-                        href={portfolioUrl}
-                        className="btn-premium bg-white text-black w-full"
-                    >
-                        <span className="text-sm font-bold uppercase tracking-tight">Enter Your Space</span>
-                    </a>
-                    <div className="mt-8 flex flex-col gap-2">
-                        <p className="text-neutral-700 text-[10px] uppercase tracking-widest">Permanent Link</p>
-                        <span className="text-neutral-400 font-mono text-xs">{typeof window !== 'undefined' ? window.location.origin.replace(/^https?:\/\//, '') : ''}{portfolioUrl}</span>
-                    </div>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="max-w-md w-full text-center"
+            >
+                <div className="w-24 h-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-10 relative">
+                    <div className="absolute inset-0 rounded-full blur-2xl bg-white/5 animate-pulse" />
+                    <Check className="w-10 h-10 text-white relative z-10" />
                 </div>
-            </div>
+                <h2 className="font-display text-4xl font-medium text-white mb-4 tracking-tight">
+                    Your legacy is <span className="italic opacity-60">published.</span>
+                </h2>
+                <p className="text-neutral-500 mb-12 leading-relaxed font-light">
+                    Our AI has woven your experience into a premium editorial narrative. Your professional story is now live.
+                </p>
+                <a
+                    href={portfolioUrl}
+                    className="btn-premium bg-white text-black w-full"
+                >
+                    <span className="text-sm font-bold uppercase tracking-tight">Enter Your Space</span>
+                </a>
+                <div className="mt-12 pt-8 border-t border-white/5 flex flex-col gap-3">
+                    <p className="text-neutral-700 text-[9px] uppercase tracking-[0.3em] font-bold">Public Endpoint</p>
+                    <span className="text-neutral-400 font-mono text-[10px] break-all opacity-60">
+                        {typeof window !== 'undefined' ? window.location.origin.replace(/^https?:\/\//, '') : ''}{portfolioUrl}
+                    </span>
+                </div>
+            </motion.div>
         );
     }
 
-    const isLoading = step !== 'idle' && step !== 'error';
-
     return (
-        <form onSubmit={handleSubmit} className="w-full space-y-10">
-
-            {/* Name + Email row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 animate-reveal-up animate-delay-100">
-                <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] ml-1">
-                        Principal Name
-                    </label>
-                    <input
-                        name="full_name"
-                        required
-                        placeholder="Aria Chen"
-                        className="input-field bg-white/[0.02] border-white/5 focus:border-white/20 transition-all rounded-xl py-4"
-                        disabled={isLoading}
-                    />
-                </div>
-                <div className="space-y-2">
-                    <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] ml-1">
-                        Direct Email
-                    </label>
-                    <input
-                        name="email"
-                        type="email"
-                        required
-                        placeholder="aria@studio.com"
-                        className="input-field bg-white/[0.02] border-white/5 focus:border-white/20 transition-all rounded-xl py-4"
-                        disabled={isLoading}
-                    />
-                </div>
+        <div className="w-full">
+            {/* Progress Bar */}
+            <div className="mb-12 flex items-center gap-4">
+                {steps.map((s, i) => (
+                    <div key={s} className="flex-1 flex flex-col gap-2">
+                        <div className={`h-1 rounded-full transition-all duration-500 ${i <= currentStepIndex ? 'bg-white' : 'bg-white/5'}`} />
+                        <span className={`text-[8px] uppercase tracking-widest font-bold transition-opacity duration-500 ${i === currentStepIndex ? 'opacity-100' : 'opacity-20'}`}>
+                            {s}
+                        </span>
+                    </div>
+                ))}
             </div>
 
-            {/* Profession */}
-            <div className="animate-reveal-up animate-delay-200 space-y-2">
-                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] ml-1">
-                    Creative Domain
-                </label>
-                <div className="relative">
-                    <select
-                        name="profession"
-                        required
-                        className="input-field bg-white/[0.02] border-white/5 focus:border-white/20 transition-all rounded-xl py-4 appearance-none cursor-pointer"
-                        defaultValue=""
-                        disabled={isLoading}
-                    >
-                        <option value="" disabled>Define your discipline</option>
-                        {PROFESSIONS.map((p) => (
-                            <option key={p} value={p} className="bg-neutral-900">{p}</option>
-                        ))}
-                    </select>
-                    <svg className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                    </svg>
-                </div>
-            </div>
-
-            {/* Raw Bio */}
-            <div className="animate-reveal-up animate-delay-300 space-y-2">
-                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] ml-1 flex justify-between">
-                    <span>Core Narrative</span>
-                    <span className="text-[9px] font-medium opacity-40 lowercase tracking-normal italic">(Input for AI Polish)</span>
-                </label>
-                <textarea
-                    name="raw_bio"
-                    required
-                    rows={4}
-                    placeholder="Briefly describe your craft, your mission, and your unique perspective..."
-                    className="input-field bg-white/[0.02] border-white/5 focus:border-white/20 transition-all rounded-xl py-4 resize-none"
-                    disabled={isLoading}
-                />
-            </div>
-
-            {/* Profile Photo */}
-            <div className="animate-reveal-up animate-delay-300 space-y-2">
-                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] ml-1">
-                    Visual Identity (Portrait)
-                </label>
-                <div
-                    className={`drop-zone border-white/5 bg-white/[0.01] hover:bg-white/[0.03] rounded-2xl p-10 transition-all ${profileDragging ? 'border-white/30 bg-white/[0.05]' : ''}`}
-                    onClick={() => profileRef.current?.click()}
-                    onDragOver={(e) => { e.preventDefault(); setProfileDragging(true); }}
-                    onDragLeave={() => setProfileDragging(false)}
-                    onDrop={handleProfileDrop}
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={formStep}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="space-y-10"
                 >
-                    {profilePhoto ? (
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                                </svg>
+                    {formStep === 'identity' && (
+                        <div className="space-y-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="group space-y-3">
+                                    <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
+                                        <User className="w-3 h-3" /> Full Name
+                                    </label>
+                                    <input
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        placeholder="Aria Chen"
+                                        className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none"
+                                    />
+                                </div>
+                                <div className="group space-y-3">
+                                    <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
+                                        <Globe className="w-3 h-3" /> Email
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="aria@studio.com"
+                                        className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none"
+                                    />
+                                </div>
                             </div>
-                            <div className="text-left flex-1 overflow-hidden">
-                                <p className="text-sm text-white font-medium truncate">{profilePhoto.name}</p>
-                                <p className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">Image Locked</p>
+                            <div className="group space-y-3">
+                                <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
+                                    <Briefcase className="w-3 h-3" /> Creative Discipline
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        value={profession}
+                                        onChange={(e) => setProfession(e.target.value)}
+                                        className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white appearance-none cursor-pointer outline-none"
+                                    >
+                                        <option value="" disabled className="bg-black">Select your craft</option>
+                                        {PROFESSIONS.map((p) => (
+                                            <option key={p} value={p} className="bg-black">{p}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronRight className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600 rotate-90 pointer-events-none" />
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); setProfilePhoto(null); }}
-                                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors"
-                            >
-                                <svg className="w-4 h-4 text-neutral-500 hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                                <svg className="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                                </svg>
-                            </div>
-                            <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-[0.1em]">Upload <span className="text-white">Profile Portrait</span> (Optional)</p>
                         </div>
                     )}
-                    <input
-                        ref={profileRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleProfileChange(e.target.files)}
-                        disabled={isLoading}
-                    />
-                </div>
-            </div>
 
-            {/* Project Photos */}
-            <div className="animate-reveal-up animate-delay-400 space-y-2">
-                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] ml-1 flex justify-between">
-                    <span>Curated Gallery</span>
-                    <span className="opacity-40">{projectPhotos.length}/5</span>
-                </label>
-                <div
-                    className={`drop-zone border-white/5 bg-white/[0.01] hover:bg-white/[0.03] rounded-2xl p-10 transition-all ${projectDragging ? 'border-white/30 bg-white/[0.05]' : ''} ${projectPhotos.length >= 5 ? 'opacity-50 pointer-events-none' : ''}`}
-                    onClick={() => projectRef.current?.click()}
-                    onDragOver={(e) => { e.preventDefault(); setProjectDragging(true); }}
-                    onDragLeave={() => setProjectDragging(false)}
-                    onDrop={handleProjectDrop}
-                >
-                    {projectPhotos.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-2">
-                            {projectPhotos.map((file, i) => (
-                                <div key={i} className="flex items-center gap-3 bg-white/[0.02] border border-white/5 rounded-xl p-3 glass">
-                                    <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                                        <svg className="w-3.5 h-3.5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                                        </svg>
-                                    </div>
-                                    <span className="text-[11px] text-neutral-400 truncate flex-1 text-left font-medium">{file.name}</span>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); removeProject(i); }}
-                                        className="w-6 h-6 flex items-center justify-center hover:bg-red-500/10 rounded-full transition-colors"
-                                    >
-                                        <svg className="w-3.5 h-3.5 text-neutral-700 hover:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
+                    {formStep === 'narrative' && (
+                        <div className="space-y-8">
+                            <div className="group space-y-3">
+                                <label className="flex items-center justify-between text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
+                                    <span className="flex items-center gap-2 text-white"><PenTool className="w-3 h-3" /> The Raw Bio</span>
+                                    <span className="opacity-40 italic lowercase tracking-normal font-normal">Input for AI Polish</span>
+                                </label>
+                                <textarea
+                                    value={rawBio}
+                                    onChange={(e) => setRawBio(e.target.value)}
+                                    rows={4}
+                                    placeholder="Describe your craft, mission, and unique perspective..."
+                                    className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none resize-none"
+                                />
+                            </div>
+                            <div className="group space-y-3">
+                                <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
+                                    <Sparkles className="w-3 h-3 text-white" /> Creative Philosophy
+                                </label>
+                                <textarea
+                                    value={philosophy}
+                                    onChange={(e) => setPhilosophy(e.target.value)}
+                                    rows={3}
+                                    placeholder="What values drive your creative decisions?"
+                                    className="w-full bg-white/[0.02] border border-white/5 focus:border-white/20 transition-all rounded-xl py-5 px-6 text-white placeholder-neutral-700 outline-none resize-none"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {formStep === 'visuals' && (
+                        <div className="space-y-8">
+                            {/* Profile Photo */}
+                            <div className="space-y-3">
+                                <label className="flex items-center gap-2 text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
+                                    <User className="w-3 h-3" /> Portrait Identity
+                                </label>
+                                <div
+                                    className={`relative border border-dashed rounded-2xl p-8 transition-all duration-500 cursor-pointer flex flex-col items-center justify-center gap-4 ${profileDragging ? 'border-white/40 bg-white/5' : 'border-white/10 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.02]'}`}
+                                    onDragOver={(e) => { e.preventDefault(); setProfileDragging(true); }}
+                                    onDragLeave={() => setProfileDragging(false)}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        setProfileDragging(false);
+                                        const file = e.dataTransfer.files?.[0];
+                                        if (file) setProfilePhoto(file);
+                                    }}
+                                    onClick={() => profileRef.current?.click()}
+                                >
+                                    {profilePhoto ? (
+                                        <div className="flex items-center gap-6 w-full">
+                                            <div className="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center overflow-hidden">
+                                                <img src={URL.createObjectURL(profilePhoto)} alt="Preview" className="w-full h-full object-cover grayscale" />
+                                            </div>
+                                            <div className="flex-1 overflow-hidden">
+                                                <p className="text-xs text-white font-medium truncate">{profilePhoto.name}</p>
+                                                <p className="text-[9px] text-neutral-600 uppercase tracking-widest mt-1">Ready for curation</p>
+                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setProfilePhoto(null); }}
+                                                className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4 text-neutral-600" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                                                <Upload className="w-5 h-5 text-neutral-600" />
+                                            </div>
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-neutral-600">Drop Portrait <span className="text-white">or click</span></p>
+                                        </>
+                                    )}
+                                    <input ref={profileRef} type="file" className="hidden" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files?.[0] || null)} />
                                 </div>
-                            ))}
-                            {projectPhotos.length < 5 && (
-                                <p className="text-[10px] text-neutral-600 mt-4 uppercase tracking-widest font-bold">Click to add more</p>
+                            </div>
+
+                            {/* Project Photos */}
+                            <div className="space-y-3">
+                                <label className="flex items-center justify-between text-[10px] font-bold text-neutral-500 uppercase tracking-widest ml-1">
+                                    <span className="flex items-center gap-2"><ImageIcon className="w-3 h-3" /> Selected Works</span>
+                                    <span className="opacity-40">{projectPhotos.length}/5</span>
+                                </label>
+                                <div
+                                    className={`relative border border-dashed rounded-2xl p-8 transition-all duration-500 cursor-pointer ${projectDragging ? 'border-white/40 bg-white/5' : 'border-white/10 bg-white/[0.01] hover:border-white/20 hover:bg-white/[0.02]'} ${projectPhotos.length >= 5 ? 'opacity-40 cursor-not-allowed' : ''}`}
+                                    onDragOver={(e) => { e.preventDefault(); setProjectDragging(true); }}
+                                    onDragLeave={() => setProjectDragging(false)}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        setProjectDragging(false);
+                                        const files = Array.from(e.dataTransfer.files).slice(0, 5 - projectPhotos.length);
+                                        setProjectPhotos(prev => [...prev, ...files]);
+                                    }}
+                                    onClick={() => projectPhotos.length < 5 && projectRef.current?.click()}
+                                >
+                                    {projectPhotos.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {projectPhotos.map((file, i) => (
+                                                <div key={i} className="flex items-center gap-4 bg-white/5 p-3 rounded-xl">
+                                                    <div className="w-8 h-8 rounded-lg bg-white/10 overflow-hidden">
+                                                        <img src={URL.createObjectURL(file)} alt="Preview" className="w-full h-full object-cover grayscale" />
+                                                    </div>
+                                                    <span className="text-[10px] text-neutral-400 flex-1 truncate">{file.name}</span>
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setProjectPhotos(prev => prev.filter((_, idx) => idx !== i)); }}
+                                                        className="p-1 rounded-full hover:bg-white/10"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5 text-neutral-700" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            {projectPhotos.length < 5 && (
+                                                <p className="text-[9px] text-center text-neutral-600 mt-2 uppercase tracking-widest">Add more works</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                                                <Upload className="w-5 h-5 text-neutral-600" />
+                                            </div>
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-neutral-600">Curate Gallery Images</p>
+                                        </div>
+                                    )}
+                                    <input ref={projectRef} type="file" className="hidden" multiple accept="image/*" onChange={(e) => {
+                                        const files = Array.from(e.target.files || []).slice(0, 5 - projectPhotos.length);
+                                        setProjectPhotos(prev => [...prev, ...files]);
+                                    }} />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {formStep === 'review' && (
+                        <div className="space-y-10">
+                            <div className="bg-white/[0.02] border border-white/5 rounded-3xl p-10 space-y-8">
+                                <div className="space-y-2">
+                                    <h3 className="font-display text-3xl text-white font-medium italic">{fullName || 'Principal Name'}</h3>
+                                    <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-600 font-bold">{profession || ' Discipline'}</p>
+                                </div>
+                                <div className="h-px bg-white/5" />
+                                <div className="space-y-6">
+                                    <div className="space-y-2">
+                                        <p className="text-[8px] uppercase tracking-widest font-bold text-neutral-700 font-bold">Contact Channel</p>
+                                        <p className="text-xs text-neutral-400 font-light">{email || 'No email provided'}</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <p className="text-[8px] uppercase tracking-widest font-bold text-neutral-700 font-bold">The Narrative</p>
+                                        <p className="text-xs text-neutral-400 font-light leading-relaxed line-clamp-3 italic opacity-60">"{rawBio || 'No bio provided'}"</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {subState === 'error' && errorMsg && (
+                                <p className="text-[10px] uppercase tracking-widest font-bold text-red-500/80 text-center">{errorMsg}</p>
                             )}
                         </div>
-                    ) : (
-                        <div className="space-y-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center mx-auto transition-transform group-hover:scale-110">
-                                <svg className="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                </svg>
-                            </div>
-                            <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-[0.1em]">Upload <span className="text-white">Portfolio Works</span> (Max 5)</p>
-                        </div>
                     )}
-                    <input
-                        ref={projectRef}
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        className="hidden"
-                        onChange={(e) => handleProjectChange(e.target.files)}
-                        disabled={isLoading}
-                    />
-                </div>
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Controls */}
+            <div className="mt-16 pt-8 border-t border-white/5 flex items-center justify-between gap-6">
+                {currentStepIndex > 0 ? (
+                    <button
+                        onClick={prevStep}
+                        disabled={subState !== 'idle' && subState !== 'error'}
+                        className="flex items-center gap-3 text-[10px] uppercase tracking-[0.3em] font-bold text-neutral-500 hover:text-white transition-colors disabled:opacity-20"
+                    >
+                        <ChevronLeft className="w-4 h-4" /> Go Back
+                    </button>
+                ) : <div />}
+
+                {formStep === 'review' ? (
+                    <button
+                        onClick={handleSubmit}
+                        disabled={subState !== 'idle' && subState !== 'error' || !fullName || !email || !profession}
+                        className="btn-premium bg-white text-black py-5 px-10 disabled:opacity-20 flex items-center gap-4"
+                    >
+                        {subState === 'idle' || subState === 'error' ? (
+                            <>
+                                <span className="text-xs font-bold uppercase tracking-widest">Publish Legacy</span>
+                                <Sparkles className="w-4 h-4" />
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                                <span className="text-xs font-bold uppercase tracking-widest">
+                                    {subState === 'uploading' && 'Syncing Assets...'}
+                                    {subState === 'ai' && 'AI Narrative...'}
+                                    {subState === 'saving' && 'Deploying...'}
+                                </span>
+                            </>
+                        )}
+                    </button>
+                ) : (
+                    <button
+                        onClick={nextStep}
+                        className="btn-premium bg-white text-black py-5 px-10 flex items-center gap-4"
+                    >
+                        <span className="text-xs font-bold uppercase tracking-widest">Continue</span>
+                        <ChevronRight className="w-4 h-4" />
+                    </button>
+                )}
             </div>
 
-            {/* Error */}
-            {step === 'error' && errorMsg && (
-                <div className="px-6 py-4 rounded-xl bg-red-500/5 border border-red-500/10 text-[11px] font-bold uppercase tracking-widest text-red-500 animate-reveal-in">
-                    {errorMsg}
-                </div>
-            )}
-
-            {/* Submit */}
-            <div className="animate-reveal-up animate-delay-500 pt-6">
-                <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full btn-premium bg-white text-black py-5 disabled:opacity-40 disabled:cursor-not-allowed group"
-                >
-                    {isLoading ? (
-                        <span className="flex items-center justify-center gap-4">
-                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                            <span className="text-sm font-bold tracking-tight uppercase">{STEP_LABELS[step]}</span>
-                        </span>
-                    ) : (
-                        <span className="text-sm font-bold tracking-tight uppercase">{STEP_LABELS[step]}</span>
-                    )}
-                </button>
-                <div className="flex justify-center flex-col items-center gap-2 mt-8 opacity-20 group-hover:opacity-40 transition-opacity">
-                    <p className="text-[9px] uppercase tracking-[0.4em] font-bold">Autonomous Design Engine</p>
-                    <div className="w-12 h-px bg-white" />
-                </div>
+            <div className="mt-12 flex justify-center">
+                <span className="text-[8px] uppercase tracking-[0.6em] font-bold text-neutral-800">Autonomous Creative Engine v2.0</span>
             </div>
-        </form>
+        </div>
     );
 }

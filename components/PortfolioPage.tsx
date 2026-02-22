@@ -136,7 +136,7 @@ export default function PortfolioPage({ profile }: Props) {
                                 <div
                                     key={i}
                                     className={`project-card group rounded-2xl animate-reveal-up ${i % 3 === 0 ? 'lg:translate-y-12' :
-                                            i % 3 === 2 ? 'lg:-translate-y-12' : ''
+                                        i % 3 === 2 ? 'lg:-translate-y-12' : ''
                                         }`}
                                     style={{ animationDelay: `${i * 0.15}s` }}
                                 >
@@ -170,27 +170,46 @@ export default function PortfolioPage({ profile }: Props) {
                 </section>
             )}
 
-            {/* ── ABOUT SECTION (Expanded) ── */}
-            <section className="px-8 py-48 lg:px-16 flex flex-col items-center justify-center bg-black border-y border-white/[0.03]">
-                <div className="max-w-4xl w-full">
-                    <div className="flex items-center gap-6 mb-16 opacity-30">
-                        <div className="flex-1 h-px bg-white" />
-                        <span className="text-[10px] uppercase tracking-[0.5em] font-bold">The Philosophy</span>
-                        <div className="flex-1 h-px bg-white" />
+            {/* ── SPIRIT / PHILOSOPHY ── */}
+            <section className="px-8 lg:px-16 xl:px-24 py-40 bg-[#080808]">
+                <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+                    <div className="space-y-12 animate-reveal-up">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-px bg-white/20" />
+                            <span className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-40">The Spirit</span>
+                        </div>
+                        <h2 className="font-display text-5xl lg:text-7xl font-medium leading-[0.9] tracking-tighter">
+                            Behind the <br /> <span className="italic opacity-30 font-light">Craft</span>
+                        </h2>
+                        <div className="max-w-md space-y-6">
+                            <p className="text-xl text-neutral-400 font-light leading-relaxed italic">
+                                "{profile.philosophy || "Design is a translation of internal vision into external experience—a continuous search for honest form."}"
+                            </p>
+                            <p className="text-neutral-500 font-light leading-relaxed">
+                                Rooted in the belief that the most powerful solutions are often the most quiet. Every project is an exploration of the space between intention and impact.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-3">
+                            {['Strategic', 'Avant-Garde', 'Minimalist'].map((tag) => (
+                                <span key={tag} className="px-4 py-1.5 rounded-full border border-white/5 bg-white/[0.02] text-[9px] uppercase tracking-widest font-bold text-neutral-500">
+                                    {tag}
+                                </span>
+                            ))}
+                        </div>
                     </div>
-                    <blockquote className="font-display text-4xl lg:text-5xl xl:text-6xl text-center leading-[1.1] mb-16 px-4">
-                        "Good design is not just what it looks like and feels like. <br className="hidden lg:block" />
-                        <span className="italic opacity-50 underline decoration-1 underline-offset-8">Design is how it works.</span>"
-                    </blockquote>
-                    <div className="flex justify-center flex-wrap gap-4">
-                        {['Strategic', 'Avant-Garde', 'Minimalist', 'Impactful'].map((tag) => (
-                            <span
-                                key={tag}
-                                className="px-5 py-2 rounded-full border border-white/10 text-[10px] uppercase tracking-widest font-medium"
-                            >
-                                {tag}
-                            </span>
-                        ))}
+                    <div className="relative aspect-[4/5] bg-neutral-900 overflow-hidden rounded-sm animate-reveal-in">
+                        {profile.profile_img ? (
+                            <img
+                                src={profile.profile_img}
+                                alt={profile.full_name}
+                                className="w-full h-full object-cover opacity-60 mix-blend-luminosity grayscale group-hover:grayscale-0 transition-all duration-1000"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-neutral-800 font-display italic text-8xl select-none">
+                                {profile.full_name.charAt(0)}
+                            </div>
+                        )}
+                        <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
                     </div>
                 </div>
             </section>

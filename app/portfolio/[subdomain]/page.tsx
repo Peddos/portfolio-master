@@ -13,7 +13,7 @@ export async function generateMetadata({ params }: Props) {
     const supabase = createBrowserClient();
     const { data } = await supabase
         .from('profiles')
-        .select('full_name, profession, bio')
+        .select('full_name, profession, bio, profile_img')
         .eq('subdomain', subdomain)
         .single();
 
@@ -22,6 +22,18 @@ export async function generateMetadata({ params }: Props) {
     return {
         title: `${data.full_name} — ${data.profession} Portfolio`,
         description: data.bio?.slice(0, 155),
+        openGraph: {
+            title: `${data.full_name} | ${data.profession}`,
+            description: data.bio?.slice(0, 160),
+            images: data.profile_img ? [data.profile_img] : [],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: data.full_name,
+            description: data.bio?.slice(0, 160),
+            images: data.profile_img ? [data.profile_img] : [],
+        },
     };
 }
 
@@ -39,5 +51,26 @@ export default async function Page({ params }: Props) {
         notFound();
     }
 
-    return <PortfolioPage profile={data as Profile} />;
+    const profile = data as Profile;
+
+    // JSON-LD for Search Engines
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: profile.full_name,
+        jobTitle: profile.profession,
+        description: profile.bio,
+        image: profile.profile_img,
+        url: `https://${subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'}`,
+    };
+
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <PortfolioPage profile={profile} />
+        </>
+    );
 }

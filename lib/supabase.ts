@@ -23,6 +23,7 @@ export type Profile = {
   profession: string;
   raw_bio: string | null;
   bio: string | null;
+  philosophy: string | null;
   profile_img: string | null;
   projects_json: { title: string; img_url: string }[];
   subdomain: string;

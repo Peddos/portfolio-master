@@ -20,6 +20,8 @@ export async function submitPortfolio(
         const profilePhotoFile = formData.get('profile_photo') as File | null;
         const projectFiles = formData.getAll('project_photos') as File[];
 
+        const philosophy = formData.get('philosophy') as string;
+
         if (!fullName || !email || !profession || !rawBio) {
             return { success: false, error: 'All fields are required.' };
         }
@@ -66,6 +68,7 @@ export async function submitPortfolio(
                     profession,
                     raw_bio: rawBio,
                     bio: polishedBio,
+                    philosophy: philosophy || null,
                     profile_img: profileImgUrl || null,
                     projects_json: projectsJson,
                     subdomain,
