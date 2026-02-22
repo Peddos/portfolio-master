@@ -17,7 +17,9 @@ import {
 } from 'lucide-react';
 import { submitPortfolio } from '@/app/actions/submit-portfolio';
 import { checkSubscriptionStatus } from '@/app/actions/check-subscription';
-import { Sparkles as SparklesIcon, Zap } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { Sparkles as SparklesIcon, Zap, LogOut, Settings } from 'lucide-react';
+import { useEffect } from 'react';
 
 const PROFESSIONS = [
     'Fashion Designer',
@@ -39,6 +41,26 @@ export default function IntakeForm() {
     const [subdomain, setSubdomain] = useState<string | null>(null);
     const [errorMsg, setErrorMsg] = useState<string>('');
     const [isPro, setIsPro] = useState(false);
+    const [user, setUser] = useState<any>(null);
+
+    const supabase = createClient();
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user: authUser } } = await supabase.auth.getUser();
+            if (authUser) {
+                setUser(authUser);
+                setEmail(authUser.email || '');
+                handleCheckSub(authUser.email || '');
+            }
+        };
+        getUser();
+    }, []);
+
+    const handleSignOut = async () => {
+        await supabase.auth.signOut();
+        window.location.href = '/login';
+    };
 
     // Form Data State
     const [fullName, setFullName] = useState('');
@@ -130,6 +152,14 @@ export default function IntakeForm() {
                 >
                     <span className="text-sm font-bold uppercase tracking-tight">Enter Your Space</span>
                 </a>
+                {isPro && (
+                    <button
+                        onClick={() => window.open('https://your-store.lemonsqueezy.com/billing', '_blank')}
+                        className="mt-4 flex items-center justify-center gap-2 w-full text-[10px] uppercase tracking-widest font-bold opacity-40 hover:opacity-100 transition-opacity"
+                    >
+                        <Settings className="w-3 h-3" /> Manage Subscription
+                    </button>
+                )}
                 <div className="mt-12 pt-8 border-t border-white/5 flex flex-col gap-3">
                     <p className="text-neutral-700 text-[9px] uppercase tracking-[0.3em] font-bold">Public Endpoint</p>
                     <span className="text-neutral-400 font-mono text-[10px] break-all opacity-60">
@@ -148,9 +178,22 @@ export default function IntakeForm() {
             <div className="space-y-12">
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40">
-                            Step {currentStepIndex + 1} / {steps.length}
-                        </span>
+                        <div className="flex items-center gap-4">
+                            <span className="text-[10px] uppercase tracking-[0.3em] font-bold opacity-40">
+                                Step {currentStepIndex + 1} / {steps.length}
+                            </span>
+                            {user && (
+                                <div className="h-4 w-[1px] bg-white/10" />
+                            )}
+                            {user && (
+                                <button
+                                    onClick={handleSignOut}
+                                    className="flex items-center gap-1 text-[8px] uppercase tracking-widest font-bold opacity-20 hover:opacity-100 transition-opacity"
+                                >
+                                    <LogOut className="w-2 h-2" /> Sign Out
+                                </button>
+                            )}
+                        </div>
                         <div className="flex gap-1">
                             {steps.map((s, i) => (
                                 <div
@@ -200,10 +243,10 @@ export default function IntakeForm() {
                                             <Globe className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 opacity-20 group-focus-within:opacity-100 transition-opacity" />
                                             <input
                                                 type="email"
+                                                readOnly
                                                 value={email}
-                                                onChange={(e) => handleCheckSub(e.target.value)}
                                                 placeholder="hello@studio.com"
-                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20"
+                                                className="w-full bg-transparent border-b border-white/10 py-4 pl-10 focus:border-white transition-colors outline-none text-xl font-light placeholder:opacity-20 opacity-50 cursor-not-allowed"
                                             />
                                         </div>
                                     </div>
