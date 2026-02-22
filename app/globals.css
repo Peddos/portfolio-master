@@ -43,17 +43,72 @@
 
 /* ── Custom Utilities ── */
 .glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-premium {
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.02);
+}
+
+.soft-glow {
+  box-shadow: 0 0 40px -10px rgba(255, 255, 255, 0.1);
+}
+
+/* ── Custom Utilities ── */
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-premium {
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0.01) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.02);
+}
+
+.soft-glow {
+  box-shadow: 0 0 40px -10px rgba(255, 255, 255, 0.1);
+}
+
+.input-premium {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 1rem 1.5rem;
+  outline: none;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #ECECEC;
+  font-weight: 300;
+}
+
+.input-premium:focus {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 /* ── Animations ── */
 @keyframes revealUp {
   from {
     opacity: 0;
-    transform: translateY(40px);
+    transform: translateY(30px);
   }
 
   to {
@@ -65,37 +120,98 @@
 @keyframes revealIn {
   from {
     opacity: 0;
-    filter: blur(10px);
+    filter: blur(15px);
+    scale: 0.98;
   }
 
   to {
     opacity: 1;
     filter: blur(0);
+    scale: 1;
   }
 }
 
-@keyframes lineDraw {
-  from {
-    scale: 0 1;
-    transform-origin: left;
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 0.3;
   }
 
-  to {
-    scale: 1 1;
-    transform-origin: left;
+  50% {
+    opacity: 0.6;
   }
 }
 
 .animate-reveal-up {
-  animation: revealUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .animate-reveal-in {
-  animation: revealIn 1s ease-out both;
+  animation: revealIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
 }
 
 .animate-line-draw {
-  animation: lineDraw 1s cubic-bezier(0.65, 0, 0.35, 1) both;
+  animation: lineDraw 1.2s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+/* ── Animations ── */
+@keyframes revealUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes revealIn {
+  from {
+    opacity: 0;
+    filter: blur(15px);
+    scale: 0.98;
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    scale: 1;
+  }
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-reveal-up {
+  animation: revealUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-reveal-in {
+  animation: revealIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+.animate-line-draw {
+  animation: lineDraw 1.2s cubic-bezier(0.65, 0, 0.35, 1) both;
 }
 
 .animate-delay-100 {

@@ -22,8 +22,8 @@ function getConfig(profession: string) {
 
 export default function PortfolioPage({ profile }: Props) {
     const config = getConfig(profile.profession);
-    const firstName = profile.full_name.split(' ')[0];
-    const lastName = profile.full_name.split(' ').slice(1).join(' ');
+    const firstName = (profile.full_name || '').split(' ')[0] || 'Curator';
+    const lastName = (profile.full_name || '').split(' ').slice(1).join(' ');
     const projects = profile.projects_json || [];
 
     return (
@@ -171,85 +171,102 @@ export default function PortfolioPage({ profile }: Props) {
             )}
 
             {/* ── SPIRIT / PHILOSOPHY ── */}
-            <section className="px-8 lg:px-16 xl:px-24 py-40 bg-[#080808]">
-                <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-                    <div className="space-y-12 animate-reveal-up">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-px bg-white/20" />
-                            <span className="text-[10px] uppercase tracking-[0.4em] font-bold opacity-40">The Spirit</span>
-                        </div>
-                        <h2 className="font-display text-5xl lg:text-7xl font-medium leading-[0.9] tracking-tighter">
-                            Behind the <br /> <span className="italic opacity-30 font-light">Craft</span>
-                        </h2>
-                        <div className="max-w-md space-y-6">
-                            <p className="text-xl text-neutral-400 font-light leading-relaxed italic">
-                                "{profile.philosophy || "Design is a translation of internal vision into external experience—a continuous search for honest form."}"
-                            </p>
-                            {!profile.philosophy && (
-                                <p className="text-neutral-500 font-light leading-relaxed">
-                                    Rooted in the belief that the most powerful solutions are often the most quiet. Every project is an exploration of the space between intention and impact.
-                                </p>
-                            )}
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                            {['Strategic', 'Avant-Garde', 'Minimalist'].map((tag) => (
-                                <span key={tag} className="px-4 py-1.5 rounded-full border border-white/5 bg-white/[0.02] text-[9px] uppercase tracking-widest font-bold text-neutral-500">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                    <div className="relative aspect-[4/5] bg-neutral-900 overflow-hidden rounded-sm animate-reveal-in">
-                        {profile.profile_img ? (
-                            <img
-                                src={profile.profile_img}
-                                alt={profile.full_name}
-                                className="w-full h-full object-cover opacity-60 mix-blend-luminosity grayscale group-hover:grayscale-0 transition-all duration-1000"
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-neutral-800 font-display italic text-8xl select-none">
-                                {profile.full_name.charAt(0)}
+            <section className="px-8 lg:px-16 xl:px-24 py-48 bg-[#050505]">
+                <div className="max-w-[1400px] mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-32 items-center">
+                        <div className="space-y-16 animate-reveal-up">
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-px bg-white/20" />
+                                    <span className="text-[10px] uppercase tracking-[0.5em] font-bold opacity-40">Internal Vision</span>
+                                </div>
+                                <h2 className="font-display text-6xl lg:text-8xl font-medium leading-[0.85] tracking-tighter">
+                                    The <br /> <span className="italic opacity-30 font-light">Philosophy</span>
+                                </h2>
                             </div>
-                        )}
-                        <div className="absolute inset-0 ring-1 ring-inset ring-white/10" />
+
+                            <div className="max-w-xl space-y-10">
+                                <p className="text-2xl lg:text-3xl text-neutral-300 font-light leading-snug italic border-l-2 pl-12 py-2" style={{ borderColor: `${config.accentHex}40` }}>
+                                    "{profile.philosophy || "Design is a translation of internal vision into external experience—a continuous search for honest form."}"
+                                </p>
+                                <p className="text-lg text-neutral-500 font-light leading-relaxed max-w-md">
+                                    Every creative act is a manifestation of intent. Rooted in the belief that the most profound expressions are often the most restrained.
+                                </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-4">
+                                {['Strategic', 'Avant-Garde', 'Minimalist', 'Editorial'].map((tag) => (
+                                    <span key={tag} className="px-6 py-2 rounded-full border border-white/5 bg-white/[0.03] text-[10px] uppercase tracking-[0.2em] font-bold text-neutral-400">
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="relative aspect-[4/5] lg:aspect-[3/4] rounded-2xl overflow-hidden glass-premium group/spirit animate-reveal-in">
+                            {profile.profile_img ? (
+                                <img
+                                    src={profile.profile_img}
+                                    alt={profile.full_name}
+                                    className="w-full h-full object-cover grayscale opacity-30 group-hover/spirit:opacity-50 group-hover/spirit:scale-105 transition-all duration-1000"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-neutral-900 font-display italic text-9xl">
+                                    {(profile.full_name || 'C').charAt(0)}
+                                </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                            <div className="absolute bottom-12 left-12 flex items-center gap-4">
+                                <div className="w-2 h-2 rounded-full animate-pulse-glow" style={{ background: config.accentHex }} />
+                                <span className="text-[10px] uppercase tracking-widest font-bold opacity-40">Curated Legacy</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            {/* ── FOOTER ── */}
-            <footer className="px-8 py-24 lg:px-16 xl:px-24">
-                <div className="max-w-[1800px] mx-auto grid md:grid-cols-2 gap-24 items-end">
-                    <div>
-                        <h2 className="font-display text-5xl lg:text-7xl font-medium tracking-tight mb-12">
-                            Ready to start <br />
-                            <span className="opacity-40 italic">something new?</span>
-                        </h2>
-                        <a
-                            href={`mailto:${profile.email}`}
-                            className="text-2xl lg:text-3xl font-light hover:opacity-50 transition-opacity underline underline-offset-[12px] decoration-1"
-                            style={{ textDecorationColor: `${config.accentHex}40` }}
-                        >
-                            {profile.email}
-                        </a>
-                    </div>
-
-                    <div className="flex flex-col items-start md:items-end gap-12">
-                        <div className="flex gap-12 text-[11px] uppercase tracking-[0.2em] font-medium">
-                            <a href="#" className="hover:opacity-40 transition-opacity">Instagram</a>
-                            <a href="#" className="hover:opacity-40 transition-opacity">LinkedIn</a>
-                            <a href="#" className="hover:opacity-40 transition-opacity">Dribbble</a>
+            {/* ── FOOTER / CONTACT ── */}
+            <footer className="px-8 py-32 lg:px-16 xl:px-24 border-t border-white/5">
+                <div className="max-w-[1800px] mx-auto">
+                    <div className="grid lg:grid-cols-2 gap-32 items-end mb-32">
+                        <div className="space-y-12">
+                            <h2 className="font-display text-7xl lg:text-8xl font-medium tracking-tight leading-[0.85]">
+                                Begin the <br />
+                                <span className="opacity-40 italic">Dialogue.</span>
+                            </h2>
+                            <p className="text-neutral-500 text-xl font-light max-w-sm">
+                                Open for collaborations and creative partnerships globally.
+                            </p>
                         </div>
 
-                        <div className="text-right">
-                            <p className="text-[11px] uppercase tracking-widest opacity-30 mb-2">Designed with</p>
-                            <p className="text-sm font-semibold tracking-tighter">Portfolio Engine v2.0</p>
+                        <div className="flex flex-col items-start lg:items-end gap-16">
+                            <a
+                                href={`mailto:${profile.email}`}
+                                className="text-3xl lg:text-5xl font-light tracking-tighter hover:opacity-50 transition-opacity border-b-2 pb-4"
+                                style={{ borderColor: `${config.accentHex}40` }}
+                            >
+                                {profile.email}
+                            </a>
+
+                            <div className="flex gap-12 text-[12px] uppercase tracking-[0.3em] font-bold">
+                                {['Instagram', 'LinkedIn', 'Dribbble'].map(link => (
+                                    <a key={link} href="#" className="hover:opacity-40 transition-all hover:-translate-y-1">{link}</a>
+                                ))}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="max-w-[1800px] mx-auto mt-24 pt-12 border-t border-white/[0.05] flex flex-col sm:flex-row justify-between gap-6 opacity-30 text-[10px] uppercase tracking-[0.2em]">
-                    <span>© {profile.full_name} {new Date().getFullYear()}</span>
-                    <Link href="/intake" className="hover:opacity-100 transition-opacity">Built your legacy →</Link>
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-12 py-12 border-t border-white/[0.03]">
+                        <div className="flex items-center gap-4 opacity-20">
+                            <div className="w-1 h-1 rounded-full bg-white" />
+                            <span className="text-[9px] uppercase tracking-[0.5em] font-bold">Autonomous Creative Engine</span>
+                        </div>
+
+                        <div className="flex items-center gap-12 text-[9px] uppercase tracking-[0.4em] font-bold">
+                            <span className="opacity-20">© {profile.full_name} {new Date().getFullYear()}</span>
+                            <Link href="/intake" className="hover:opacity-40 transition-opacity">Build Your Own →</Link>
+                        </div>
+                    </div>
                 </div>
             </footer>
         </div>

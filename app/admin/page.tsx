@@ -73,60 +73,72 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-6">
                     <AnimatePresence>
                         {profiles.map((profile, i) => (
                             <motion.div
                                 key={profile.id}
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={{ opacity: 0, y: 15 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: i * 0.05 }}
-                                className="group bg-white/[0.02] border border-white/5 rounded-2xl p-6 lg:p-8 flex items-center justify-between gap-8 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-500"
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ delay: i * 0.05, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                className="group glass-premium rounded-3xl p-6 lg:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-500 relative overflow-hidden"
                             >
-                                <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden bg-neutral-900 border border-white/5 grayscale">
-                                        {profile.profile_img ? (
-                                            <img src={profile.profile_img} className="w-full h-full object-cover" alt={profile.full_name} />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <Users className="w-6 h-6 opacity-20" />
+                                <div className="absolute top-0 left-0 w-1 h-full bg-white/5 group-hover:bg-white/20 transition-colors" />
+
+                                <div className="flex items-center gap-8 relative z-10">
+                                    <div className="relative">
+                                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-neutral-900 border border-white/5 grayscale group-hover:grayscale-0 transition-all duration-700">
+                                            {profile.profile_img ? (
+                                                <img src={profile.profile_img} className="w-full h-full object-cover" alt={profile.full_name} />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center">
+                                                    <Users className="w-8 h-8 opacity-10" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        {profile.subscription_status === 'pro' && (
+                                            <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center border-2 border-[#050505] soft-glow">
+                                                <ShieldCheck className="w-3 h-3 text-black" />
                                             </div>
                                         )}
                                     </div>
-                                    <div className="space-y-1">
-                                        <h3 className="font-display text-xl">{profile.full_name}</h3>
-                                        <div className="flex items-center gap-3">
-                                            <p className="text-[10px] uppercase tracking-widest font-bold opacity-30">{profile.profession}</p>
+
+                                    <div className="space-y-2">
+                                        <h3 className="font-display text-2xl lg:text-3xl tracking-tight">{profile.full_name}</h3>
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            <p className="text-[10px] uppercase tracking-[0.2em] font-bold opacity-30 group-hover:opacity-60 transition-opacity">{profile.profession}</p>
                                             <span className="w-1 h-1 rounded-full bg-white/10" />
-                                            <p className="text-[10px] font-mono opacity-20 lowercase">{profile.subdomain}.artfledge.co</p>
+                                            <code className="text-[10px] font-mono opacity-20 group-hover:opacity-40 transition-opacity">{profile.subdomain}.artfledge.co</code>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-12">
-                                    <div className="hidden md:block text-right space-y-1">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <CreditCard className={`w-3 h-3 ${profile.subscription_status === 'pro' ? 'text-amber-400' : 'opacity-20'}`} />
-                                            <span className={`text-[9px] uppercase tracking-widest font-bold ${profile.subscription_status === 'pro' ? 'text-amber-400' : 'opacity-30'}`}>
-                                                {profile.subscription_status || 'free'}
+                                <div className="flex flex-wrap items-center gap-10 lg:gap-16 relative z-10">
+                                    <div className="space-y-2 lg:text-right">
+                                        <div className="flex items-center lg:justify-end gap-3">
+                                            <span className={`text-[10px] uppercase tracking-[0.3em] font-bold ${profile.subscription_status === 'pro' ? 'text-amber-400' : 'opacity-20'}`}>
+                                                {(profile.subscription_status || 'standard').toUpperCase()}
                                             </span>
                                         </div>
-                                        <p className="text-[8px] opacity-10 uppercase tracking-widest uppercase">Since {new Date(profile.created_at).toLocaleDateString()}</p>
+                                        <p className="text-[9px] opacity-10 uppercase tracking-widest font-bold">Member Since {profile.created_at ? new Date(profile.created_at).toLocaleDateString() : 'Recent'}</p>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-3">
                                         <a
                                             href={`/portfolio/${profile.subdomain}`}
                                             target="_blank"
-                                            className="p-3 rounded-full hover:bg-white/5 transition-colors group/link"
+                                            className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white hover:text-black transition-all group/link"
+                                            title="View Portfolio"
                                         >
-                                            <ExternalLink className="w-4 h-4 opacity-20 group-hover/link:opacity-100 transition-opacity" />
+                                            <ExternalLink className="w-4 h-4 opacity-40 group-hover/link:opacity-100 transition-opacity" />
                                         </a>
                                         <button
                                             onClick={() => handleDelete(profile.id, profile.full_name)}
-                                            className="p-3 rounded-full hover:bg-red-500/10 transition-colors group/del"
+                                            className="w-12 h-12 rounded-2xl bg-red-500/5 flex items-center justify-center hover:bg-red-500 transition-all group/del"
+                                            title="Remove Curator"
                                         >
-                                            <Trash2 className="w-4 h-4 text-red-500 opacity-20 group-hover/del:opacity-100 transition-opacity" />
+                                            <Trash2 className="w-4 h-4 text-red-500 group-hover/del:text-white transition-colors" />
                                         </button>
                                     </div>
                                 </div>
