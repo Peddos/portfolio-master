@@ -1,3 +1,4 @@
+'use client';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Sparkles, Send, Check } from 'lucide-react';
