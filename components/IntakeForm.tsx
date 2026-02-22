@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { submitPortfolio } from '@/app/actions/submit-portfolio';
 import { checkSubscriptionStatus } from '@/app/actions/check-subscription';
+import { subscribeToNewsletter } from '@/app/actions/subscribe-newsletter';
 import { createClient } from '@/lib/supabase/client';
 import { Sparkles as SparklesIcon, Zap, LogOut, Settings } from 'lucide-react';
 import { useEffect } from 'react';
@@ -42,6 +43,7 @@ export default function IntakeForm() {
     const [errorMsg, setErrorMsg] = useState<string>('');
     const [isPro, setIsPro] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [subscribeNewsletter, setSubscribeNewsletter] = useState(true);
 
     const supabase = createClient();
 
@@ -119,6 +121,9 @@ export default function IntakeForm() {
             const result = await submitPortfolio(formData);
 
             if (result.success) {
+                if (subscribeNewsletter && email) {
+                    await subscribeToNewsletter(email);
+                }
                 setSubdomain(result.subdomain);
                 setSubState('done');
             } else {
@@ -387,9 +392,20 @@ export default function IntakeForm() {
                                             "I am {fullName || '...'}, a {profession || '...'} dedicated to the craft of {rawBio ? 'intentional design' : '...'}."
                                         </p>
                                         <p className="text-xs opacity-60 leading-relaxed">
-                                            Your legacy will be crafted with Gemini 2.0 AI and hosted on a unique editorial subdomain.
+                                            Your legacy will be crafted with Gemini 3.0 AI and hosted on a unique editorial subdomain.
                                         </p>
                                     </div>
+
+                                    <div
+                                        onClick={() => setSubscribeNewsletter(!subscribeNewsletter)}
+                                        className="flex items-center gap-3 px-2 cursor-pointer group/nsub"
+                                    >
+                                        <div className={`w-5 h-5 rounded-md border transition-all flex items-center justify-center ${subscribeNewsletter ? 'bg-white border-white' : 'border-white/10 group-hover/nsub:border-white/30'}`}>
+                                            {subscribeNewsletter && <Check className="w-3 h-3 text-black" />}
+                                        </div>
+                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-30 group-hover/nsub:opacity-100 transition-opacity">Stay in the loop with the Curator Collective</span>
+                                    </div>
+
                                     {subState === 'error' && errorMsg && (
                                         <p className="text-xs text-red-500 font-mono">{errorMsg}</p>
                                     )}
